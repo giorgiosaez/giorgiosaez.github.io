@@ -1,0 +1,107 @@
+---
+title: "Practical Machine Learning: Course Project"
+author: "Giorgio S"
+date: "October 10, 2017"
+output: 
+  html_document: 
+    fig_caption: yes
+    theme: flatly
+    toc: yes
+sansfont: Calibri
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = F)
+#Installing Libraries
+#install.packages("psych","data.table","h2o","dummies")
+options(digits=2,width = 80)
+#Set working directory
+```
+##Summary 
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+
+
+```{r load_packages, include=FALSE}
+library(knitr)
+library(data.table)
+library(caret)
+library(ggplot2)
+library(psych)
+#library(dummies)
+set.seed(447)
+options(digits = 3)
+
+```
+
+##Loading data in R
+```{r load_data}
+#load data using fread
+trainset <- read.csv("pml-training.csv", stringsAsFactors = F, sep = ",",header=T, na.strings = c("",NA,"#DIV/0!"))
+testset <- read.csv("pml-testing.csv", stringsAsFactors = F,sep = ",",header=T, na.strings = c("",NA,"#DIV/0!"))
+
+```
+Now let's check the data
+```{r, eval=FALSE,echo=TRUE}
+#No. of rows and columns in Train
+dim(trainset)
+summary(trainset)
+names(trainset)
+```
+There are a lot of NAs in the data, and even data missing or in the wrong format, that can be diminish reading the CSV file and cleasing the data
+
+##Cleaning the Data
+```{r}
+isGoodColumn <- sapply(trainset, function (x){! any(is.na(x))})
+trainCleaned <- trainset[, names(trainset)[isGoodColumn]]
+testCleaned <- testset[, names(testset)[isGoodColumn]]
+head(trainCleaned)
+
+```
+
+##Sampling Training and Validation
+
+```{r}
+training_sample <- createDataPartition(y=trainCleaned$classe, p=0.8, list=FALSE)
+sample_training <- trainCleaned[training_sample,]
+sample_validation <- trainCleaned[-training_sample,]
+
+```
+
+##Model Building
+
+In here we have created a simple GBM model with caret package, we are also interested in knowing in-sample (sample_training) error and out-of-sample(sample_validation) error
+```{r, eval=FALSE}
+myModel <- train(classe ~., data=sample_training, method="gbm")
+
+predictedST <- predict(myModel, sample_training)
+predictedSV <- predict(myModel, sample_validation)
+
+confusionMatrix(predictedST, sample_training$classe)
+confusionMatrix(predictedSV, sample_validation$classe)
+
+```
+
+
+
+## Conclusions
+
+This Assignment allowed us to explore a real dataset with a lot of uncleaned data and a real problem where using the techniches that we have learned we can decifer if a person is working out correctly
+```{r}
+
+```
+
+##Course Project Prediction Quiz Portion
+
+```{r, eval=FALSE}
+predict(myModel,testCleaned) 
+
+```
+
+
+
+#Future improvements
+* Create more features to extract more info.
+* Parameter tuning to the models.
+* Create more models and ensemble
